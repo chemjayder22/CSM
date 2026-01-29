@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <title>Generate CFR</title>
+   <link rel="stylesheet" href="styles.css" />
+   <!-- SheetJS (XLSX) from CDN -->
+   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+   <div class="container">
+      <div class="page-header">
+         <div class="page-header-main">
+            <h1>GENERATE CUSTOMER FEEDBACK REPORT</h1>
+            <p class="page-intro">Select an Excel file ( .xlsx, .xls, .csv ) to read all data from the first sheet.</p>
+         </div>
+
+         <div class="upload-panel">
+            <div class="upload-row">
+               <label class="file-label" for="fileInput">Upload Excel file</label>
+               <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+            </div>
+            <div id="status" class="status-text">No file loaded.</div>
+         </div>
+      </div>
+
+      <div class="table-wrapper hidden" id="tableWrapper">
+         <table id="excelTable">
+            <thead></thead>
+            <tbody></tbody>
+         </table>
+      </div>
+
+      <button id="previewModalBtn" class="preview-button hidden" type="button">Preview full sheet</button>
+      <button id="previewHeadersBtn" class="preview-button hidden" type="button">Preview headers</button>
+      <button id="viewAllReportsBtn" class="preview-button hidden" type="button">View all offices reports</button>
+      <button id="viewAllServiceReportsBtn" class="preview-button hidden" type="button">View all services reports</button>
+
+      <div class="global-filter hidden" id="globalFilter">
+         <label>
+            Rating period:
+            <select class="rating-period" id="globalRatingPeriod">
+               <option value="Jan-Dec">Whole year</option>
+               <option value="January">January</option>
+               <option value="February">February</option>
+               <option value="March">March</option>
+               <option value="April">April</option>
+               <option value="May">May</option>
+               <option value="June">June</option>
+               <option value="July">July</option>
+               <option value="August">August</option>
+               <option value="September">September</option>
+               <option value="October">October</option>
+               <option value="November">November</option>
+               <option value="December">December</option>
+            </select>
+         </label>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerPersonnel" data-office="Personnel">
+         <div class="services-header">
+            <h1>Personnel</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListPersonnel"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerRecords" data-office="Records">
+         <div class="services-header">
+            <h1>Records</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListRecords"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerAccounting" data-office="Accounting">
+         <div class="services-header">
+            <h1>Accounting</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListAccounting"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerCash" data-office="Cash">
+         <div class="services-header">
+            <h1>Cash</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListCash"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerGeneralServices" data-office="General Services">
+         <div class="services-header">
+            <h1>General Services</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListGeneralServices"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerPropertySupply" data-office="Property and Supply">
+         <div class="services-header">
+            <h1>Property and Supply</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListPropertySupply"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerProcurement" data-office="Procurement">
+         <div class="services-header">
+            <h1>Procurement</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListProcurement"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerHRD" data-office="HRD - Human Resource Development">
+         <div class="services-header">
+            <h1>HRD - Human Resource Development</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListHRD"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerLRMS" data-office="LRMS - Learning Resource Management Section">
+         <div class="services-header">
+            <h1>LRMS - Learning Resource Management Section</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListLRMS"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerInstructional" data-office="Instructional Management Section">
+         <div class="services-header">
+            <h1>Instructional Management Section</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListInstructional"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerPSDS" data-office="PSDS - Public School District Supervisor">
+         <div class="services-header">
+            <h1>PSDS - Public School District Supervisor</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListPSDS"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerSchoolHealth" data-office="School Health">
+         <div class="services-header">
+            <h1>School Health</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListSchoolHealth"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerPlanning" data-office="Planning & Research">
+         <div class="services-header">
+            <h1>Planning & Research</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListPlanning"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerSMME" data-office="SMME - School Management Monitoring and Evaluation Section">
+         <div class="services-header">
+            <h1>SMME - School Management Monitoring and Evaluation Section</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListSMME"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerSocMob" data-office="SocMob - Social Mobilization and Networking">
+         <div class="services-header">
+            <h1>SocMob - Social Mobilization and Networking</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListSocMob"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerEducationFacilities" data-office="Education Facilities">
+         <div class="services-header">
+            <h1>Education Facilities</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListEducationFacilities"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerSDS" data-office="SDS - Schools Division Superintendent">
+         <div class="services-header">
+            <h1>SDS - Schools Division Superintendent</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListSDS"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerASDS" data-office="ASDS - Assistant Schools Division Superintendent">
+         <div class="services-header">
+            <h1>ASDS - Assistant Schools Division Superintendent</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListASDS"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerICT" data-office="ICT">
+         <div class="services-header">
+            <h1>ICT</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListICT"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerLegal" data-office="Legal">
+         <div class="services-header">
+            <h1>Legal</h1>
+            <div class="services-actions">
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <p><b>Services:</b></p>
+         <ol id="servicesListLegal"></ol>
+      </div>
+
+   <div id="headersPreviewModal" class="modal-overlay hidden">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h2>Column headers (top to bottom)</h2>
+            <button id="closeHeadersModal" class="close-modal" type="button">Close</button>
+         </div>
+         <div class="modal-body">
+            <div class="headers-list-container" id="headersListContainer">
+               <ol id="headersList"></ol>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <script src="scripts.js"></script>
+
+   <!-- jsPDF bundle must load before generate.js -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+   <!-- jsPDF AutoTable plugin for proper table layout -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+   <!-- html2canvas (kept for potential future use) -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+   <!-- PDF generator -->
+   <script src="generate.js"></script>
+
+   <script>
+      // Wire the test View report button to generate a PDF using generate.js
+      document.addEventListener('DOMContentLoaded', function () {
+         var btn = document.getElementById('preview-btn');
+         if (!btn) return;
+
+         btn.addEventListener('click', function () {
+            if (window.generatePaginatedPdf) {
+               window.generatePaginatedPdf({ preview: true });
+            } else {
+               alert('PDF generator is not loaded.');
+            }
+         });
+      });
+      
+
+      
+   </script>
+</body>
+</html>
