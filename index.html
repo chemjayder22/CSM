@@ -3,7 +3,9 @@
 <head>
    <meta charset="UTF-8" />
    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-   <title>Generate CFR</title>
+   <title>CMS (Customer Management System)</title>
+   <meta name="theme-color" content="#2563eb" />
+   <link rel="manifest" href="manifest.json" />
    <link rel="stylesheet" href="styles.css" />
    <!-- SheetJS (XLSX) from CDN -->
    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -11,6 +13,13 @@
 <body>
    <div class="container">
       <div class="page-header">
+         <div class="brand-header">
+            <img class="brand-logo" src="assets/sdo-logo.png" alt="Department of Education logo" onerror="this.style.display='none'" />
+            <div class="brand-text">
+               <div class="brand-name">CMS</div>
+               <div class="brand-subtitle">Customer Management System</div>
+            </div>
+         </div>
          <div class="page-header-main">
             <h1>GENERATE CUSTOMER FEEDBACK REPORT</h1>
             <p class="page-intro">Select an Excel file ( .xlsx, .xls, .csv ) to read all data from the first sheet.</p>
@@ -300,6 +309,8 @@
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
    <!-- html2canvas (kept for potential future use) -->
    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+   <!-- Signatories config (must load before generate.js) -->
+   <script src="signatories.js"></script>
    <!-- PDF generator -->
    <script src="generate.js"></script>
 
@@ -317,6 +328,12 @@
             }
          });
       });
+
+      if ('serviceWorker' in navigator) {
+         window.addEventListener('load', function () {
+            navigator.serviceWorker.register('./service-worker.js').catch(function () {});
+         });
+      }
       
 
       

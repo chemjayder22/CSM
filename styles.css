@@ -25,6 +25,37 @@ h1 {
    /* box-shadow: 0 14px 30px rgba(15, 23, 42, 0.35); */
 }
 
+.brand-header {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   margin-bottom: 10px;
+}
+
+.brand-logo {
+   width: 56px;
+   height: 56px;
+   object-fit: contain;
+}
+
+.brand-text {
+   display: flex;
+   flex-direction: column;
+   line-height: 1.15;
+}
+
+.brand-name {
+   font-weight: 800;
+   letter-spacing: 0.04em;
+   color: #0f172a;
+   font-size: 1.1rem;
+}
+
+.brand-subtitle {
+   color: rgba(103, 121, 138, 0.9);
+   font-size: 0.92rem;
+}
+
 .page-header-main {
    padding-bottom: 10px;
    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
@@ -148,6 +179,7 @@ tbody tr:nth-child(even) {
    font-weight: 500;
    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
    transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+   text-decoration: none;
 }
 
 .preview-button:hover {

@@ -169,3 +169,41 @@ Service availed - SGOD (Private school-related) (distinct values)
 	Special Orders-graduation of private schools learners
 	No Increase in tuition/other school fees
 	Increase in tuition/other school fees (TOSF)
+	
+	
+	
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+Personnel
+Records
+Accounting
+Cash
+General Services
+Property and Supply
+Procurement
+
+HRD - Human Resource Development
+
+LRMS - Learning Resource Management Section
+Instructional Management Section
+PSDS - Public School District Supervisor
+
+School Health
+Planning & Research
+SMME - School Management Monitoring and Evaluation Section
+SocMob - Social Mobilization and Networking
+Education Facilities
+
+
+//hindi naisama
+ASDS
+ICT
+Legal
+SDS
+
+
+//wala
+M&E
+
+

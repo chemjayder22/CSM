@@ -436,6 +436,18 @@
         row.averageScore,
       ]);
 
+      // Helper to compute descriptive overall rating for the
+      // Overall Ratings row only.
+      function getDescriptiveLabel(avg) {
+        if (typeof avg !== 'number' || Number.isNaN(avg)) return '';
+        if (avg >= 4.5) return 'Outstanding';
+        if (avg >= 3.5) return 'Very Satisfactory';
+        if (avg >= 2.5) return 'Satisfactory';
+        if (avg >= 1.5) return 'Unsatisfactory';
+        if (avg > 0) return 'Poor';
+        return '';
+      }
+
       // Compute overall average rating across all SQDs
       let overallTotalScore = 0;
       let overallTotalRespondents = 0;
@@ -445,27 +457,65 @@
         overallTotalScore += tr;
         overallTotalRespondents += resp;
       });
-      const overallAverage = overallTotalRespondents > 0
-        ? (overallTotalScore / overallTotalRespondents).toFixed(2)
-        : '';
+      const overallAverageNumber = overallTotalRespondents > 0
+        ? (overallTotalScore / overallTotalRespondents)
+        : NaN;
+      const overallAverage = Number.isNaN(overallAverageNumber)
+        ? ''
+        : overallAverageNumber.toFixed(2);
 
-      // Add "Overall Ratings" row at the bottom with merged cells:
-      // first 9 columns merged into one label cell, last column shows the overall average
+      const overallDesc = getDescriptiveLabel(overallAverageNumber);
+
+      // First summary row: Overall Ratings only, aligned with the Ave. Rated Score column
       body3.push([
         {
-          content: 'Overall Ratings',
+          content: 'Overall Ratings:',
           colSpan: 9,
-          styles: { halign: 'right' },
+          styles: { halign: 'right', fontStyle: 'bold' },
         },
         overallAverage,
       ]);
 
-      // Add an extra blank row under the Overall Ratings row, with all
-      // columns merged into a single cell. This will contain all remarks
-      // for the matching rows (if any), as a joined string.
+      // Second summary row directly under it: Descriptive Overall Rating
       body3.push([
         {
-          content: (totals.remarksJoined || ''),
+          content: 'Descriptive Overall Rating:',
+          colSpan: 9,
+          styles: { halign: 'right', fontStyle: 'bold' },
+        },
+        overallDesc,
+      ]);
+
+      // Add an extra row under the Overall Ratings row. If remarks are
+      // provided in totals.remarks (up to three), display them here as
+      // a multi-line block. Otherwise, keep this as a blank spacing row.
+      //
+      // Some remarks may contain emojis or extended Unicode characters that
+      // jsPDF's default font cannot render properly, which causes extra
+      // spacing and overflow. To avoid this, strip unsupported characters
+      // and keep only basic printable ASCII for the PDF output.
+      function sanitizeRemark(text) {
+        if (typeof text !== 'string') return '';
+        // Keep printable ASCII 32-126; drop everything else (including emojis).
+        return text.replace(/[^\x20-\x7E]/g, '');
+      }
+
+      let remarksText = '';
+      if (Array.isArray(totals.remarks) && totals.remarks.length > 0) {
+        const picked = totals.remarks.slice(0, 3);
+        const lines = ['Descriptive Remarks:'];
+        picked.forEach((remark, idx) => {
+          const clean = sanitizeRemark(remark);
+          if (clean.trim().length > 0) {
+            lines.push(`${idx + 1}. "${clean}"`);
+          }
+        });
+        remarksText = lines.join('\n');
+      }
+
+      body3.push([
+        {
+          content: remarksText,
           colSpan: 10,
           styles: { halign: 'left' },
         },
@@ -525,6 +575,14 @@
     // sits just above the footer, regardless of table height.
     let sigY = footerY - 50; // a bit above the footer image
 
+    // Read signatories from a separate JS config if available.
+    // Falls back to the existing hardcoded strings when not defined.
+    const sigConfig = (window && window.SDO_SIGNATORIES) || {};
+    const preparedByName = sigConfig.preparedByName;
+    const preparedByTitle = sigConfig.preparedByTitle;
+    const notedByName = sigConfig.notedByName;
+    const notedByTitle = sigConfig.notedByTitle;
+
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
     // Move the signature block a little towards the center, but still
@@ -532,25 +590,25 @@
     const sigLeft = secondTableMargin + -10;
 
     doc.text('Prepared by:', sigLeft, sigY);
-    sigY += 8;
+    sigY += 13;
 
     doc.setFont(undefined, 'bold');
-    doc.text('CHEM JAYDER M. CABUNGCAL', sigLeft, sigY);
+    doc.text(preparedByName, sigLeft, sigY);
     sigY += 5;
 
     doc.setFont(undefined, 'normal');
-    doc.text('Information Technology Officer I', sigLeft, sigY);
+    doc.text(preparedByTitle, sigLeft, sigY);
     sigY += 10;
 
     doc.text('Noted by:', sigLeft, sigY);
-    sigY += 8;
+    sigY += 13;
 
     doc.setFont(undefined, 'bold');
-    doc.text('CHRISTOPHER R. DIAZ, CESO V', sigLeft, sigY);
+    doc.text(notedByName, sigLeft, sigY);
     sigY += 5;
 
     doc.setFont(undefined, 'normal');
-    doc.text('Schools Division Superintendent', sigLeft, sigY);
+    doc.text(notedByTitle, sigLeft, sigY);
   }
 
   // Expose as window.generatePaginatedPdf
@@ -596,7 +654,8 @@
     const footerAspect = footerImgWidth / footerImgHeight;
     const footerW = pageWidth - 20; // full width minus margins
     const footerH = footerW / footerAspect;
-    const footerY = pageHeight - footerH - 10;
+    // Move footer slightly closer to the bottom edge (reduce bottom margin)
+    const footerY = pageHeight - footerH - 3;
     const topMargin = 8;
     const bottomMargin = 8;
     const bodyTopY = headerY + headerH + topMargin + 4; // extra 4mm gap
@@ -642,9 +701,23 @@
     const pdfBlob = doc.output('blob');
 
     if (options.preview) {
-      // Open PDF in a new tab
       const url = URL.createObjectURL(pdfBlob);
-      window.open(url, '_blank');
+
+      // If a previewElementId (e.g., iframe) is provided, render inside it
+      if (options.previewElementId) {
+        const target = document.getElementById(options.previewElementId);
+        if (target && target.tagName === 'IFRAME') {
+          target.src = url;
+        } else {
+          // Fallback to opening in new tab if element is missing or not an iframe
+          window.open(url, '_blank');
+        }
+      } else {
+        // Default preview behavior: open in a new tab
+        window.open(url, '_blank');
+      }
+      // NOTE: we do not immediately revokeObjectURL here so the iframe/tab can load it.
+      // The browser will clean it up on navigation or reload.
     } else {
       // Download the PDF
       const url = URL.createObjectURL(pdfBlob);

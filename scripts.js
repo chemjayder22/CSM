@@ -287,10 +287,7 @@ function computeReportTotals(office, period, serviceName) {
       // Will be filled below
       serviceRows: [],
       ccTotals: null,
-      // Joined remarks string for this office/period/service (if any)
-      remarksJoined: '',
-      // Joined remarks grouped by service, for debugging/inspection
-      remarksByServiceString: '',
+      remarks: [],
    };
 
    if (!currentHeaderRow || !currentBodyRows || currentBodyRows.length === 0) {
@@ -313,6 +310,13 @@ function computeReportTotals(office, period, serviceName) {
       if (!h) return false;
       const text = String(h).toLowerCase();
       return text.includes('customer type') || text.includes('client type') || text.includes('type of customer');
+   });
+
+   // Remarks / comments column (used for descriptive remarks in the PDF)
+   const remarksColIndex = headerRow.findIndex((h) => {
+      if (!h) return false;
+      const text = String(h).toLowerCase();
+      return text.includes('remarks') || text.includes('comment');
    });
 
    // Fallback: if we couldn't find an Age column by header text but we do have a Sex column,
@@ -423,18 +427,6 @@ function computeReportTotals(office, period, serviceName) {
    }
 
    const targetMonth = monthFromPeriod(period);
-
-   // Remarks column index (any header containing 'remark')
-   const remarksColIndex = headerRow.findIndex((h) => {
-      if (!h) return false;
-      return String(h).toLowerCase().includes('remark');
-   });
-
-   // Collect raw remarks for matching rows
-   const collectedRemarks = [];
-
-   // Collect remarks grouped by service name
-   const remarksByService = new Map(); // serviceName -> [remarks]
 
    // Citizen's Charter columns (office-level, not per service)
    // Match using distinctive parts of the actual question texts from the Excel.
@@ -561,6 +553,17 @@ function computeReportTotals(office, period, serviceName) {
       // Count respondent for CC totals, demographics, etc. (already filtered
       // by office, period, and optionally service).
       totalRespondents += 1;
+
+      // Collect up to three distinct non-empty remarks for this office/period/service
+      if (remarksColIndex !== -1 && totals.remarks.length < 3) {
+         const rawRemark = row[remarksColIndex];
+         if (rawRemark !== undefined && rawRemark !== null) {
+            const remarkText = String(rawRemark).trim();
+            if (remarkText && !totals.remarks.includes(remarkText)) {
+               totals.remarks.push(remarkText);
+            }
+         }
+      }
 
       // Service availed counts
       if (servicesInRow.length) {
@@ -713,35 +716,6 @@ function computeReportTotals(office, period, serviceName) {
             agg.na += 1;
          }
       });
-
-      // Remarks collection (after all filters applied)
-      if (remarksColIndex !== -1) {
-         const rawRemark = row[remarksColIndex];
-         if (rawRemark !== undefined && rawRemark !== null) {
-            const remarkText = String(rawRemark).trim();
-            if (remarkText) {
-               // Overall remarks list (for totals.remarksJoined)
-               collectedRemarks.push(remarkText);
-
-               // Group remarks per service. If no specific service is being
-               // filtered, attach this remark to all services present in
-               // this row. If a specific serviceName is requested, only
-               // attach to that service.
-               const targetServices = serviceName
-                  ? servicesInRow.filter((svc) => svc === serviceName)
-                  : servicesInRow;
-
-               targetServices.forEach((svc) => {
-                  if (!svc) return;
-                  const key = String(svc).trim();
-                  if (!key) return;
-                  const arr = remarksByService.get(key) || [];
-                  arr.push(remarkText);
-                  remarksByService.set(key, arr);
-               });
-            }
-         }
-      }
    });
 
    // Build service rows array (for PDF table)
@@ -781,38 +755,6 @@ function computeReportTotals(office, period, serviceName) {
          averageScore: avg ? avg.toFixed(2) : '',
       };
    });
-
-   // Join remarks into a single string: "comment1","comment2",...
-   if (collectedRemarks.length > 0) {
-      totals.remarksJoined = collectedRemarks
-         .map((txt) => `"${txt}"`)
-         .join(',');
-   } else {
-      totals.remarksJoined = '';
-   }
-
-   // Build a single string that includes which service each remark
-   // belongs to, e.g.:
-   //   [Service A] "remark1","remark2" | [Service B] "remark3"
-   if (remarksByService.size > 0) {
-      const parts = [];
-      remarksByService.forEach((arr, svcName) => {
-         if (!arr || arr.length === 0) return;
-         const joined = arr
-            .map((txt) => `"${txt}"`)
-            .join(',');
-         parts.push(`[${svcName}] ${joined}`);
-      });
-      totals.remarksByServiceString = parts.join(' | ');
-   } else {
-      totals.remarksByServiceString = '';
-   }
-
-   // For now, just print the grouped remarks string to the console so
-   // you can verify the format before using it in the PDF.
-   if (totals.remarksByServiceString) {
-      console.log('Remarks by service:', totals.remarksByServiceString);
-   }
 
    return totals;
 }
